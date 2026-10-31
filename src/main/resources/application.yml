@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: sparkplug
+  datasource:
+    driver-class-name: com.taosdata.jdbc.rs.RestfulDriver
+    url: jdbc:TAOS-RS://120.79.70.60:6041/cloud_db?useSSL=false&user=root&password=Jx5rUd0OFHt8ziop
+# using connection pools
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+
+
+
+
+mqtt:
+  broker: tcp://47.106.152.37:1883
+  client-id: DEM1001X10RE10001030
+  username: M1001X10RE10001030
+  password: 123456
+  subscribe-topic: spBv1.0/#
+  # QoS 1，保证至少送达一次，适合SPB
+  qos: 1
+  # 重连
+  automatic-reconnect: true
+  # 心跳，单位秒
+  keep-alive: 30
+
