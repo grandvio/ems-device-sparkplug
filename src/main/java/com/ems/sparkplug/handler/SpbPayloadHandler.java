@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import com.ems.sparkplug.constant.SpbTopicConstant;
 import com.ems.sparkplug.manager.SpbAliasCache;
 import com.ems.sparkplug.model.SpbMetricDto;
+import com.ems.sparkplug.server.OnlineStatusService;
 import com.ems.sparkplug.server.TsdbService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -18,20 +19,30 @@ public class SpbPayloadHandler {
     private SpbAliasCache aliasCache;
     @Autowired
     private TsdbService tsdbService;
+    @Autowired
+    private OnlineStatusService onlineStatusService;
 
 
     public void handle(String groupId, String edgeNodeId, String deviceId, String msgType, SparkplugBProto.Payload payload) {
         switch (msgType) {
             case SpbTopicConstant.MSG_TYPE_NBIRTH:
+                handleBirth(groupId, edgeNodeId, deviceId, payload);
+                onlineStatusService.gatewayOnline(groupId, edgeNodeId, eventTime(payload));
+                break;
             case SpbTopicConstant.MSG_TYPE_DBIRTH:
                 handleBirth(groupId, edgeNodeId, deviceId, payload);
+                onlineStatusService.deviceOnline(groupId, edgeNodeId, deviceId, eventTime(payload));
                 break;
             case SpbTopicConstant.MSG_TYPE_DDATA:
                 handleDdata(groupId, edgeNodeId, deviceId, payload);
                 break;
             case SpbTopicConstant.MSG_TYPE_NDEATH:
+                handleDeath(groupId, edgeNodeId, deviceId, payload);
+                onlineStatusService.gatewayOffline(groupId, edgeNodeId, eventTime(payload));
+                break;
             case SpbTopicConstant.MSG_TYPE_DDEATH:
                 handleDeath(groupId, edgeNodeId, deviceId, payload);
+                onlineStatusService.deviceOffline(groupId, edgeNodeId, deviceId, eventTime(payload));
                 break;
             default:
                 log.debug("暂不处理消息类型：{}", msgType);
@@ -105,6 +116,13 @@ public class SpbPayloadHandler {
     private void handleDeath(String groupId, String edgeNodeId, String deviceId, SparkplugBProto.Payload payload) {
         log.warn("收到Death，设备离线 group={}, edge={}, device={}", groupId, edgeNodeId, deviceId);
         aliasCache.clearDevice(groupId, edgeNodeId, deviceId);
+    }
+
+    private long eventTime(SparkplugBProto.Payload payload) {
+        if (payload != null && payload.hasTimestamp() && payload.getTimestamp() > 0) {
+            return payload.getTimestamp();
+        }
+        return System.currentTimeMillis();
     }
 
     /**

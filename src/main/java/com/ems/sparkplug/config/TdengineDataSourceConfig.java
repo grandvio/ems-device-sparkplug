@@ -2,11 +2,16 @@ package com.ems.sparkplug.config;
 
 import com.alibaba.druid.pool.DruidDataSource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import javax.sql.DataSource;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -17,6 +22,7 @@ import java.sql.Statement;
 public class TdengineDataSourceConfig {
 
     @Bean(initMethod = "init")
+    @Primary
     @ConfigurationProperties(prefix = "spring.datasource.druid")
     public DruidDataSource tdengineDataSource(
             @Value("${spring.datasource.driver-class-name}") String driverClassName,
@@ -25,6 +31,12 @@ public class TdengineDataSourceConfig {
         dataSource.setDriverClassName(driverClassName);
         dataSource.setUrl(url);
         return dataSource;
+    }
+
+    @Bean
+    @Primary
+    public JdbcTemplate jdbcTemplate(@Qualifier("tdengineDataSource") DataSource tdengineDataSource) {
+        return new JdbcTemplate(tdengineDataSource);
     }
 
     @Bean
